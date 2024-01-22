@@ -3,21 +3,35 @@ import { UsersResponse, getUsers } from "@/services/users";
 import Autocomplete from "@mui/material/Autocomplete";
 import CircularProgress from "@mui/material/CircularProgress";
 import TextField from "@mui/material/TextField";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useFormContext } from "react-hook-form";
 
 export default function NameFieldAutocomplete() {
-  const { register, formState } = useFormContext();
+  const { register, formState, getValues, setValue } = useFormContext();
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<UsersResponse>([]);
-  const loading = open && options.length === 0;
+
+  const loading = useMemo(
+    () => open && options.length === 0,
+    [open, options.length]
+  );
 
   function handleOpen() {
+    const name = getValues("name");
+
+    if (name === "") return;
+
     setOpen(true);
   }
 
   function handleClose() {
     setOpen(false);
+
+    const user = options.find((user) => user.name === getValues("name"));
+
+    if (!user) {
+      setValue("name", "");
+    }
   }
 
   useEffect(() => {
@@ -46,6 +60,13 @@ export default function NameFieldAutocomplete() {
     }
   }, [open]);
 
+  function handleInputChange(event: React.ChangeEvent<HTMLInputElement>) {
+    if (event.target.value.length > 0) {
+      setOpen(true);
+    }
+    setValue("name", event.target.value);
+  }
+
   return (
     <Autocomplete
       open={open}
@@ -59,6 +80,7 @@ export default function NameFieldAutocomplete() {
         <TextField
           {...params}
           {...register("name", { required: true })}
+          onChange={handleInputChange}
           label="Pessoa"
           InputProps={{
             ...params.InputProps,
